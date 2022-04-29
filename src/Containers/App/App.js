@@ -1,6 +1,9 @@
-import React, { useState } from 'react';
+
+// Les Librairies
+import React, { useState, useRef, useEffect } from 'react';
 import classes from './App.module.css';
 import Task from '../../Components/Task/Task';
+import axios from '../../axios-firebase';
 
 function App() {
 
@@ -8,17 +11,62 @@ function App() {
   const [tasks, setTasks] = useState([]);
   const [input, setInput] = useState('');
 
+  // Ref
+  const inpurRef = useRef('');
+
+  // Cycle de vie 
+  useEffect(() =>{
+    inpurRef.current.focus();
+
+    // Axios
+    axios.get('/taches.json')
+    .then(response =>{
+      const tasksArray = [];
+
+      for(let key in response.data){
+        tasksArray.push({
+          ...response.data[key],
+          id:key
+        });
+      }
+
+      setTasks(tasksArray);
+    })
+    .catch(error =>{
+      console.log(error);
+    });
+
+  },[]);
+
   // Fonctions pour gérer la supression 
   const removeClickedHandler = index => {
     const newTasks = [...tasks];
     newTasks.splice(index, 1);
     setTasks(newTasks);
+
+    // Axios
+    axios.delete('/taches/' + tasks[index].id + 'json')
+      .then(response =>{
+        console.log(response);
+      })
+      .catch(error =>{
+        console.log(error);
+      });
   }
 
   const doneClickedHandler = index => {
     const newTasks = [...tasks];
     newTasks[index].done = !tasks[index].done;
     setTasks(newTasks);
+
+    // Axios
+    axios.put('/taches/' + tasks[index].id + '.json', tasks[index])
+    .then(response =>{
+      console.log(response);
+    })
+    .catch(error =>{
+      console.log(error);
+    });
   }
 
   const submittedTaskHandler = event => {
@@ -30,6 +78,15 @@ function App() {
     }
     setTasks([...tasks, newTask]);
     setInput('');
+
+    // Axios
+    axios.post('/taches.json', newTask)
+      .then(response =>{
+        console.log(response);
+      })
+      .catch(error =>{
+        console.log(error);
+      });
   }
 
   const changedFormHandler = event => {
@@ -60,13 +117,14 @@ function App() {
   return (
     <div className={classes.App}>
       <header>
-        <span>TO-DO</span>
+        <span>TO-DO-List</span>
       </header>
 
       <div className={classes.add}>
         <form onSubmit={(e) => submittedTaskHandler(e)}>
           <input
             type="text"
+            ref={inpurRef}
             value={input}
             onChange={(e) => changedFormHandler(e)}
             placeholder="Que souhaitez-vous ajouter ?" />
